@@ -10,48 +10,67 @@ movies = {
 
 purchases = []  # list of (title, qty, price_each)
 
+# --- Functions ---
+def show_movies():
+    print("\nAvailable movies and prices:")
+    for title, price in movies.items():
+        print(f"- {title}: ${price:.2f}")
+
+def get_movie_choice():
+    show_movies()
+    return input("Which movie would you like to watch? (or 'done' to finish): ").strip()
+
+def get_quantity(title):
+    while True:
+        try:
+            qty = int(input(f"How many tickets for {title}? "))
+            if qty > 0:
+                return qty
+            print("Quantity must be positive.")
+        except ValueError:
+            print("Invalid number. Try again.")
+
+def apply_group_discount(qty, price_each):
+    """Apply 10% discount for 4 or more tickets."""
+    return price_each * 0.9 if qty >= 4 else price_each
+
+def apply_member_discount(total, is_member):
+    """Apply 5% discount if member."""
+    return total * 0.95 if is_member else total
+
 # --- Part A: Input loop ---
 while True:
-    title = input("Enter movie title (or 'done' to finish): ")
+    title = get_movie_choice()
     if title.lower() == 'done':
         break
     if title not in movies:
-        print("Movie not available. Choose from:", ", ".join(movies.keys()))
+        print("Movie not available. Please choose from the list.")
         continue
     
-    # Quantity input with validation
-    try:
-        qty = int(input(f"How many tickets for {title}? "))
-        if qty <= 0:
-            print("Quantity must be positive.")
-            continue
-    except ValueError:
-        print("Invalid number. Try again.")
-        continue
-
-    price_each = movies[title]
-    
-    # Part D: Group discount (10% off for 4+ tickets)
-    if qty >= 4:
-        price_each *= 0.9  # 10% discount per ticket
+    qty = get_quantity(title)
+    price_each = apply_group_discount(qty, movies[title])
     
     purchases.append((title, qty, price_each))
     print(f"Added {qty} x {title} @ ${price_each:.2f} each.")
 
+if not purchases:
+    print("No tickets purchased.")
+    exit()
+
 # --- Part B: Receipt ---
 print("\n--- Receipt ---")
 grand_total = 0
+print(f"{'Movie':20} {'Qty':>3} {'Price':>7} {'Total':>8}")
+print("-" * 40)
 for title, qty, price_each in purchases:
     line_total = qty * price_each
     grand_total += line_total
-    print(f"{qty} x {title} @ ${price_each:.2f} = ${line_total:.2f}")
+    print(f"{title:20} {qty:>3} ${price_each:>6.2f} ${line_total:>7.2f}")
 
-# Part D: Member discount
-member_code = input("Do you have a member code? (yes/no): ").strip().lower()
-if member_code == 'yes':
-    grand_total *= 0.95  # extra 5% off
-
-print(f"Grand Total: ${grand_total:.2f}")
+# Member discount
+member = input("\nDo you have a member code? (yes/no): ").strip().lower() == 'yes'
+grand_total = apply_member_discount(grand_total, member)
+print(f"\nGrand Total: ${grand_total:.2f}")
 
 # --- Part C: Sales summary ---
 tickets_by_movie = {}
@@ -79,11 +98,11 @@ print(f"\nTop-selling movie by tickets: {top_title} ({top_qty} tickets)")
 
 # Sort titles by revenue
 sorted_by_rev = sorted(revenue_by_movie.items(), key=lambda kv: kv[1], reverse=True)
-print("Movies sorted by revenue:")
+print("\nMovies sorted by revenue:")
 for title, revenue in sorted_by_rev:
     print(f"{title}: ${revenue:.2f}")
 
 # Average tickets per purchase
 total_tickets = sum(qty for _, qty, _ in purchases)
-avg_tickets = total_tickets / len(purchases) if purchases else 0
-print(f"Average tickets per purchase: {avg_tickets:.2f}")
+avg_tickets = total_tickets / len(purchases)
+print(f"\nAverage tickets per purchase: {avg_tickets:.2f}")
